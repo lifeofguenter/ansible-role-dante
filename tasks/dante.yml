@@ -1,0 +1,42 @@
+---
+- name: Install Dependencies
+  apt: name={{ item }} state=present update_cache=yes cache_valid_time=3600
+  with_items:
+    - make
+    - gcc
+    - libpam0g-dev
+  become: yes
+
+- name: Download source
+  get_url: url=http://www.inet.no/dante/files/dante-{{ dante_version }}.tar.gz dest={{ dante_working_dir }}/dante-{{ dante_version }}.tar.gz
+
+- name: Unpack source
+  unarchive: src={{ dante_working_dir }}/dante-{{ dante_version }}.tar.gz dest={{ dante_working_dir }} copy=no
+
+- name: Configure
+  command: >
+    ./configure
+    --prefix=/usr
+    --sysconfdir=/etc
+    --localstatedir=/var
+    --without-libwrap
+    --without-bsdauth
+    --without-gssapi
+    --without-krb5
+    --without-upnp
+    chdir={{ dante_working_dir }}/dante-{{ dante_version }}
+
+- name: Make
+  command: chdir={{ dante_working_dir }}/dante-{{ dante_version }} make
+
+- name: Install
+  command: chdir={{ dante_working_dir }}/dante-{{ dante_version }} make install
+  become: yes
+
+- name: Add Service Script
+  copy: src=sockd.init dest=/etc/init.d/sockd mode="u+x,g+x,o+x"
+  become: yes
+
+- name: Enable Service
+  service: name=sockd enabled=yes
+  become: yes

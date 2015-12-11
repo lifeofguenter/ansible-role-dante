@@ -1,0 +1,12 @@
+---
+#- command: echo "{{ item }}"
+#  with_items: ansible_all_ipv4_addresses
+
+- name: Check if Dante is already installed
+  shell: sockd -v
+  register: dante_current
+  ignore_errors: yes
+
+- name: Install Dante
+  include: dante.yml
+  when: dante_current.stdout.find('v{{ dante_version }}') == -1
